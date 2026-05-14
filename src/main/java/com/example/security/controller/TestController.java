@@ -12,4 +12,7 @@ public class TestController {
     public String test() {
         return "Testando segurança";
     }
+
+    @GetMapping("/admin")
+    public String admin() { return "Admin"; }
 }
