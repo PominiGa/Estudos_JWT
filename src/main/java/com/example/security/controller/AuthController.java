@@ -6,6 +6,7 @@ import com.example.security.dto.request.RegisterUserRequest;
 import com.example.security.dto.response.LoginResponse;
 import com.example.security.dto.response.RegisterUserResponse;
 import com.example.security.entity.User;
+import com.example.security.entity.enums.UserRole;
 import com.example.security.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,7 @@ public class AuthController {
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setEmail(request.email());
         newUser.setName(request.name());
+        newUser.setRole(UserRole.CURRENT);
 
         userRepository.save(newUser);
 
