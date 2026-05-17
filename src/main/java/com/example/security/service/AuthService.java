@@ -106,6 +106,87 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    public void changeUserForSeller(String email, String document) {
+
+        User user = userRepository.findUserByEmail(email)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (user.getRole() != UserRole.CURRENT) {
+            throw new com.example.security.exception.DocumentInvalidException("Usuário não pode ser promovido para seller");
+        }
+
+        String onlyDigits = document.replaceAll("\\D+", "");
+        boolean valid;
+
+        if (onlyDigits.length() == 11) {
+            valid = isValidCPF(onlyDigits);
+        } else if (onlyDigits.length() == 14) {
+            valid = isValidCNPJ(onlyDigits);
+        } else {
+            throw new com.example.security.exception.DocumentInvalidException("Documento deve ser um CPF ou CNPJ válido");
+        }
+
+        if (!valid) {
+            throw new com.example.security.exception.DocumentInvalidException("Documento inválido");
+        }
+
+        user.setRole(UserRole.SELLER);
+        userRepository.save(user);
+    }
+
+    private boolean isValidCPF(String cpf) {
+        if (cpf == null || cpf.length() != 11) return false;
+        if (cpf.matches("^(\\d)\\1{10}$")) return false;
+
+        try {
+            int sum = 0;
+            for (int i = 0; i < 9; i++) {
+                sum += Character.getNumericValue(cpf.charAt(i)) * (10 - i);
+            }
+            int firstCheck = 11 - (sum % 11);
+            if (firstCheck >= 10) firstCheck = 0;
+            if (firstCheck != Character.getNumericValue(cpf.charAt(9))) return false;
+
+            sum = 0;
+            for (int i = 0; i < 10; i++) {
+                sum += Character.getNumericValue(cpf.charAt(i)) * (11 - i);
+            }
+            int secondCheck = 11 - (sum % 11);
+            if (secondCheck >= 10) secondCheck = 0;
+            return secondCheck == Character.getNumericValue(cpf.charAt(10));
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private boolean isValidCNPJ(String cnpj) {
+        if (cnpj == null || cnpj.length() != 14) return false;
+        if (cnpj.matches("^(\\d)\\1{13}$")) return false;
+
+        try {
+            int[] weight1 = {5,4,3,2,9,8,7,6,5,4,3,2};
+            int[] weight2 = {6,5,4,3,2,9,8,7,6,5,4,3,2};
+
+            int sum = 0;
+            for (int i = 0; i < 12; i++) {
+                sum += Character.getNumericValue(cnpj.charAt(i)) * weight1[i];
+            }
+            int firstCheck = sum % 11;
+            firstCheck = firstCheck < 2 ? 0 : 11 - firstCheck;
+            if (firstCheck != Character.getNumericValue(cnpj.charAt(12))) return false;
+
+            sum = 0;
+            for (int i = 0; i < 13; i++) {
+                sum += Character.getNumericValue(cnpj.charAt(i)) * weight2[i];
+            }
+            int secondCheck = sum % 11;
+            secondCheck = secondCheck < 2 ? 0 : 11 - secondCheck;
+            return secondCheck == Character.getNumericValue(cnpj.charAt(13));
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
     public void deleteUser(String email, DeleteUserDTO dto) {
 
         User user = userRepository.findUserByEmail(email)

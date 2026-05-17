@@ -57,6 +57,15 @@ public class AuthController {
         return ResponseEntity.ok("Senha alterada com sucesso");
     }
 
+    @PutMapping("/become-seller")
+    public ResponseEntity<String> becomeSeller(
+            @AuthenticationPrincipal User user,
+            @RequestParam("document") String document
+    ) {
+        authService.changeUserForSeller(user.getEmail(), document);
+        return ResponseEntity.ok("Usuário convertido para seller com sucesso");
+    }
+
     @DeleteMapping
     public ResponseEntity<String> deleteUser(
             @AuthenticationPrincipal User user,
