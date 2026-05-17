@@ -28,4 +28,8 @@ public class Products {
     private String EAN;
 
     private BigDecimal price;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }
