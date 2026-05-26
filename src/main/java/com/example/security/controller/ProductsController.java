@@ -1,15 +1,21 @@
 package com.example.security.controller;
 
+import com.example.security.dto.ApiResponse;
 import com.example.security.dto.request.ProductRequest;
-import com.example.security.entity.Products;
+import com.example.security.dto.response.ProductResponse;
 import com.example.security.entity.User;
 import com.example.security.service.ProductsService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/products")
@@ -22,69 +28,75 @@ public class ProductsController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Products>> getAll() {
-        return ResponseEntity.ok(productsService.getAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Products> getById(@PathVariable long id) {
-        return ResponseEntity.ok(productsService.getById(id));
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAll(
+            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ApiResponse.ok("Produtos encontrados", productsService.getAll(pageable));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Products>> getByName(@RequestParam("name") String name) {
-        return ResponseEntity.ok(productsService.getByName(name));
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> search(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return ApiResponse.ok("Resultado da busca", productsService.search(name, category, minPrice, maxPrice, pageable));
     }
 
-    @PostMapping
-    public ResponseEntity<Products> createProduct(
-            @AuthenticationPrincipal User user,
-            @Valid @RequestBody ProductRequest req
-    ) {
-        return ResponseEntity.status(201).body(productsService.createProduct(user, req));
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductResponse>> getById(@PathVariable Long id) {
+        return ApiResponse.ok("Produto encontrado", productsService.getById(id));
     }
 
     @GetMapping("/ean")
-    public ResponseEntity<Products> getByEan(
-            @RequestParam("ean") String ean,
-            @AuthenticationPrincipal User user
-    ) {
-        return ResponseEntity.ok(productsService.findByEan(user, ean));
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> getByEan(
+            @RequestParam String ean,
+            @AuthenticationPrincipal User user) {
+        return ApiResponse.ok("Produto encontrado", productsService.findByEan(user, ean));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> create(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ProductRequest req) {
+        return ApiResponse.created("Produto criado com sucesso", productsService.createProduct(user, req));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Products> editById(
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> editById(
             @AuthenticationPrincipal User user,
-            @PathVariable long id,
-            @Valid @RequestBody ProductRequest req
-    ) {
-        return ResponseEntity.ok(productsService.editById(user, id, req));
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest req) {
+        return ApiResponse.ok("Produto atualizado", productsService.editById(user, id, req));
     }
 
     @PutMapping("/by-name")
-    public ResponseEntity<Products> editByName(
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> editByName(
             @AuthenticationPrincipal User user,
-            @RequestParam("name") String name,
-            @Valid @RequestBody ProductRequest req
-    ) {
-        return ResponseEntity.ok(productsService.editByName(user, name, req));
+            @RequestParam String name,
+            @Valid @RequestBody ProductRequest req) {
+        return ApiResponse.ok("Produto atualizado", productsService.editByName(user, name, req));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteById(
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteById(
             @AuthenticationPrincipal User user,
-            @PathVariable long id
-    ) {
+            @PathVariable Long id) {
         productsService.deleteById(user, id);
-        return ResponseEntity.ok("Produto deletado com sucesso");
+        return ApiResponse.noContent("Produto removido com sucesso");
     }
 
     @DeleteMapping("/by-name")
-    public ResponseEntity<String> deleteByName(
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteByName(
             @AuthenticationPrincipal User user,
-            @RequestParam("name") String name
-    ) {
+            @RequestParam String name) {
         productsService.deleteByName(user, name);
-        return ResponseEntity.ok("Produto deletado com sucesso");
+        return ApiResponse.noContent("Produto removido com sucesso");
     }
 }

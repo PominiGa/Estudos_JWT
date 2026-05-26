@@ -15,11 +15,14 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class Products {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
+    @Column(nullable = false)
     private String name;
+
     private String description;
     private String category;
     private String subcategory;
@@ -27,9 +30,18 @@ public class Products {
     @Column(unique = true)
     private String EAN;
 
+    @Column(nullable = false)
     private BigDecimal price;
 
-    @ManyToOne
+    @Column(nullable = false)
+    private Integer stockQuantity = 0;
+
+    private String imageUrl;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;
 }
