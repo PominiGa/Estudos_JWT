@@ -12,14 +12,19 @@ import com.example.security.entity.enums.UserRole;
 import com.example.security.exception.*;
 import com.example.security.repository.UserRepository;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -77,6 +82,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public void changePassword(String email, @Valid ChangePasswordDTO dto) {
 
         User user = userRepository.findUserByEmail(email)
@@ -99,13 +105,12 @@ public class AuthService {
             throw new PasswordConfirmationException();
         }
 
-        user.setPassword(
-                passwordEncoder.encode(dto.getNewPassword())
-        );
-
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
+        log.info("Senha alterada para usuario: {}", email);
     }
 
+    @Transactional
     public void changeUserForSeller(String email, String document) {
 
         User user = userRepository.findUserByEmail(email)
@@ -132,6 +137,7 @@ public class AuthService {
 
         user.setRole(UserRole.SELLER);
         userRepository.save(user);
+        log.info("Usuario promovido a SELLER: {}", email);
     }
 
     private boolean isValidCPF(String cpf) {
@@ -187,20 +193,16 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public void deleteUser(String email, DeleteUserDTO dto) {
-
         User user = userRepository.findUserByEmail(email)
                 .orElseThrow(UserNotFoundException::new);
 
-        boolean passwordCorrect = passwordEncoder.matches(
-                dto.getPassword(),
-                user.getPassword()
-        );
-
-        if (!passwordCorrect) {
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new PasswordInvalidException();
         }
 
         userRepository.delete(user);
+        log.info("Conta removida: {}", email);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.security.controller;
 
+import com.example.security.dto.ApiResponse;
 import com.example.security.dto.ChangePasswordDTO;
 import com.example.security.dto.DeleteUserDTO;
 import com.example.security.dto.request.LoginRequest;
@@ -9,7 +10,6 @@ import com.example.security.dto.response.RegisterUserResponse;
 import com.example.security.entity.User;
 import com.example.security.service.AuthService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,54 +25,36 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-
-        LoginResponse response = authService.login(request);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponse.ok("Login realizado com sucesso", authService.login(request));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterUserResponse> register(
-            @Valid @RequestBody RegisterUserRequest request
-    ) {
-
-        RegisterUserResponse response =
-                authService.register(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+    public ResponseEntity<ApiResponse<RegisterUserResponse>> register(@Valid @RequestBody RegisterUserRequest request) {
+        return ApiResponse.created("Usuário cadastrado com sucesso", authService.register(request));
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<String> changePassword(
+    public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangePasswordDTO dto
-            ) {
+            @Valid @RequestBody ChangePasswordDTO dto) {
         authService.changePassword(user.getEmail(), dto);
-
-        return ResponseEntity.ok("Senha alterada com sucesso");
+        return ApiResponse.noContent("Senha alterada com sucesso");
     }
 
     @PutMapping("/become-seller")
-    public ResponseEntity<String> becomeSeller(
+    public ResponseEntity<ApiResponse<Void>> becomeSeller(
             @AuthenticationPrincipal User user,
-            @RequestParam("document") String document
-    ) {
+            @RequestParam("document") String document) {
         authService.changeUserForSeller(user.getEmail(), document);
-        return ResponseEntity.ok("Usuário convertido para seller com sucesso");
+        return ApiResponse.noContent("Conta convertida para seller com sucesso");
     }
 
     @DeleteMapping
-    public ResponseEntity<String> deleteUser(
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
             @AuthenticationPrincipal User user,
-            @Valid @RequestBody DeleteUserDTO dto
-    ) {
+            @Valid @RequestBody DeleteUserDTO dto) {
         authService.deleteUser(user.getEmail(), dto);
-
-        return ResponseEntity.ok("Usuario deletado com sucesso");
+        return ApiResponse.noContent("Conta removida com sucesso");
     }
 }
