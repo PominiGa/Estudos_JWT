@@ -44,15 +44,12 @@ public class ProductsController {
         return ResponseEntity.status(201).body(productsService.createProduct(user, req));
     }
 
-    @GetMapping("/search")
+    @GetMapping("/ean")
     public ResponseEntity<Products> getByEan(
             @RequestParam("ean") String ean,
             @AuthenticationPrincipal User user
     ) {
-
-        return ResponseEntity.ok(
-                productsService.findByEan(user, ean)
-        );
+        return ResponseEntity.ok(productsService.findByEan(user, ean));
     }
 
     @PutMapping("/{id}")
